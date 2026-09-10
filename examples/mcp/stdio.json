@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "xrb": {
+      "command": "/Users/h.qiu/miniconda3/envs/xrb-mcp/bin/python",
+      "args": ["-m", "xrb_mcp.server.main"],
+      "env": {
+        "XRB_READ_DATABASE_URL": "postgresql+psycopg://xrb_reader:xrb_reader_dev_only@localhost:5432/xrb",
+        "XRB_EMBEDDING_BACKEND": "none"
+      }
+    }
+  }
+}

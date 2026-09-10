@@ -1,0 +1,48 @@
+name: xrb-mcp
+services:
+  db:
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+    environment:
+      POSTGRES_DB: xrb
+      POSTGRES_USER: xrb
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-xrb_dev_only}
+      XRB_READER_PASSWORD: ${XRB_READER_PASSWORD:-xrb_reader_dev_only}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xrb -d xrb"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  migrate:
+    build: .
+    environment:
+      XRB_DATABASE_URL: postgresql+psycopg://xrb:${POSTGRES_PASSWORD:-xrb_dev_only}@db:5432/xrb
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+  mcp:
+    build:
+      context: .
+      args:
+        INSTALL_EMBEDDINGS: ${INSTALL_EMBEDDINGS:-false}
+    stdin_open: true
+    environment:
+      XRB_READ_DATABASE_URL: postgresql+psycopg://xrb_reader:${XRB_READER_PASSWORD:-xrb_reader_dev_only}@db:5432/xrb
+      XRB_EMBEDDING_BACKEND: ${XRB_EMBEDDING_BACKEND:-none}
+      XRB_EMBEDDING_MODEL: ${XRB_EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+      XRB_EMBEDDING_REVISION: ${XRB_EMBEDDING_REVISION:-main}
+    volumes:
+      - ./data:/app/data:ro
+      - model_cache:/home/xrb/.cache
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+volumes:
+  postgres_data:
+  model_cache:
