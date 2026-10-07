@@ -3,6 +3,7 @@ import json
 import logging
 from pathlib import Path
 
+from xrb_mcp.ingestion.catalogues import is_catalogue_file, read_catalogue
 from xrb_mcp.scripts.ingest import ingest_file
 from xrb_mcp.server.config import get_settings
 
@@ -22,6 +23,19 @@ def main() -> None:
                 result = ingest_file(path)
             except Exception as exc:
                 # One failed document must not roll back successfully ingested neighbours.
+                result = {"status": "failed", "error_type": type(exc).__name__}
+                failed += 1
+            print(json.dumps({"file": path.name, **result}))
+        elif path.is_file() and is_catalogue_file(path):
+            try:
+                summary = read_catalogue(path, preview_rows=1)
+                result = {
+                    "status": "catalogue_read",
+                    "format": summary["format"],
+                    "row_count": summary["row_count"],
+                    "column_count": len(summary["columns"]),
+                }
+            except Exception as exc:
                 result = {"status": "failed", "error_type": type(exc).__name__}
                 failed += 1
             print(json.dumps({"file": path.name, **result}))

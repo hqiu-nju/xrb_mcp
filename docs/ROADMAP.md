@@ -8,6 +8,7 @@ delivers a usable Phase 1 vertical slice, with the original plan left unchanged.
 - Python packaging, Docker Compose, typed settings, writer/reader separation.
 - Migrated sources, aliases, papers, paper-source links, chunks, provenance and collections.
 - PDF extraction, section/paragraph chunks, metadata sidecars, hash-based updates.
+- Inbox catalogue parsing for FITS and ASCII/CSV files (read-only summaries).
 - Optional embedding provider with model/version/dimension tracking and an explicit rebuild command.
 - Full-text and vector queries with shared filters, rank fusion and cited evidence bundles.
 - Three core tools and source/paper/ontology resources over local MCP stdio.

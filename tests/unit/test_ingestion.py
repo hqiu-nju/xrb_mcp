@@ -1,6 +1,7 @@
 import pytest
 
 from xrb_mcp.astronomy.aliases import normalize_alias
+from xrb_mcp.ingestion.catalogues import read_catalogue
 from xrb_mcp.ingestion.chunking import chunk_blocks
 from xrb_mcp.ingestion.embeddings import checked_embeddings
 from xrb_mcp.ingestion.metadata import PaperMetadata
@@ -95,3 +96,41 @@ def test_typeset_columns_and_figure_labels_keep_correct_sections(tmp_path):
     assert right.section == "3 Results"
     assert blocks[-1].section == "3 Results"
     assert all(block.section != "5.5 GHz radio luminosity" for block in blocks)
+
+
+def test_catalogue_reader_supports_csv(tmp_path):
+    path = tmp_path / "sample.csv"
+    path.write_text("name,ra_deg,dec_deg\nGX 9+9,262.934,-16.961\nGX 3+1,266.976,-26.565\n")
+    result = read_catalogue(path, preview_rows=1)
+    assert result["format"] == "csv"
+    assert result["columns"] == ["name", "ra_deg", "dec_deg"]
+    assert result["row_count"] == 2
+    assert result["preview"] == [{"name": "GX 9+9", "ra_deg": "262.934", "dec_deg": "-16.961"}]
+
+
+def test_catalogue_reader_supports_fits_when_astropy_is_installed(tmp_path):
+    table_module = pytest.importorskip("astropy.table")
+    path = tmp_path / "sample.fits"
+    table = table_module.Table({"name": ["GX 9+9"], "flux_mjy": [1.7]})
+    table.write(path, format="fits")
+    result = read_catalogue(path)
+    assert result["format"] == "fits"
+    assert result["row_count"] == 1
+    assert result["columns"] == ["name", "flux_mjy"]
+
+
+def test_catalogue_reader_supports_ascii_when_astropy_is_installed(tmp_path):
+    pytest.importorskip("astropy.table")
+    path = tmp_path / "sample.dat"
+    path.write_text("name flux_mjy\nGX_9+9 1.7\n")
+    result = read_catalogue(path)
+    assert result["format"] == "ascii"
+    assert result["row_count"] == 1
+    assert result["columns"] == ["name", "flux_mjy"]
+
+
+def test_catalogue_reader_rejects_unknown_extension(tmp_path):
+    path = tmp_path / "sample.json"
+    path.write_text("{}")
+    with pytest.raises(ValueError, match="Unsupported catalogue format"):
+        read_catalogue(path)

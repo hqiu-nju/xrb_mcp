@@ -17,6 +17,7 @@ dependencies = [
   "pydantic-settings>=2.7,<3",
   "PyMuPDF>=1.25,<2",
   "numpy>=2,<3",
+  "httpx>=0.27,<1",
 ]
 
 [project.optional-dependencies]
@@ -29,8 +30,10 @@ xrb-mcp = "xrb_mcp.server.main:main"
 xrb-ingest = "xrb_mcp.scripts.ingest:main"
 xrb-update = "xrb_mcp.scripts.update:main"
 xrb-source = "xrb_mcp.scripts.sources:main"
+xrb-build-catalogues = "xrb_mcp.scripts.catalogues:main"
 xrb-rebuild-embeddings = "xrb_mcp.scripts.rebuild_embeddings:main"
 xrb-validate = "xrb_mcp.scripts.validate_database:main"
+xrb-ollama = "xrb_mcp.agents.ollama:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

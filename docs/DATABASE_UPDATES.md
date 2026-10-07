@@ -126,13 +126,20 @@ xrb-update data/inbox
 ```
 
 With no argument, `xrb-update` uses `XRB_DATA_DIR/inbox`. It scans that directory
-once, non-recursively, and finds PDFs with either lowercase or uppercase suffixes.
-Each PDF uses its same-basename `.json` sidecar. Files remain in the inbox.
+once, non-recursively, and processes:
 
-One JSON record is printed per PDF. Each paper has its own transaction, so an
-invalid file does not discard its successfully ingested neighbours. The command
-returns exit code 1 if any file fails; failure records include the exception type.
-Run `xrb-ingest` on the failed file for a more detailed local diagnostic.
+- PDFs with either lowercase or uppercase suffixes, using same-basename `.json` sidecars.
+- Catalogue files in FITS (`.fits`, `.fit`, `.fts`) and ASCII/CSV (`.csv`, `.tsv`, `.txt`,
+  `.dat`, `.ascii`, `.ecsv`, `.tab`) formats.
+
+Files remain in the inbox.
+
+One JSON record is printed per processed file. Each paper has its own transaction,
+so an invalid file does not discard its successfully ingested neighbours. Catalogue
+records are parse-only summaries (`status: catalogue_read`) with format, row count,
+and column count; they are not written into database catalogue tables in Phase 1.
+The command returns exit code 1 if any file fails; failure records include the
+exception type. Run `xrb-ingest` on a failed PDF for a more detailed local diagnostic.
 
 There is no background watcher or automatic literature discovery. Run the command
 again after adding files, or invoke it from a scheduler you manage. Start with one

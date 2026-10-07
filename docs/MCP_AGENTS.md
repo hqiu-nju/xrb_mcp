@@ -17,6 +17,11 @@ Newly committed papers are available to subsequent queries without restarting th
 server. Restart after changing code, credentials, model settings or client config.
 See [database updates](DATABASE_UPDATES.md) for all write operations.
 
+For fully local model inference, use the included `xrb-ollama` agent client.
+It bridges Ollama tool calling to this MCP server; see the
+[Ollama setup and examples](OLLAMA.md). Other clients can use the same MCP server
+with their preferred model provider.
+
 ## Prepare the local server
 
 ```bash

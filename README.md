@@ -11,6 +11,8 @@ Implemented:
   and a separate read-only MCP database role.
 - PDF text extraction with 1-based PDF page references and section heuristics;
   paragraph-aware chunking and content-addressed PDF storage.
+- Catalogue file parsing for FITS and ASCII/CSV inputs during inbox updates,
+  with row/column summaries for operator review.
 - Transactional ingestion, SHA256 skips, and changed-document replacement by
   normalized DOI, arXiv identifier or ADS bibcode.
 - Reviewed source/alias registration; strict case/spacing normalization that
@@ -20,6 +22,7 @@ Implemented:
 - MCP tools `search_literature`, `get_paper`, `get_source`; paper, source and
   ontology resources. CLI ingestion and validation remain separate from MCP.
 - Automated synthetic-PDF tests, including a real stdio MCP client workflow.
+- A local Ollama agent client (`xrb-ollama`) that calls the read-only MCP tools.
 
 Python modules follow the plan’s functional layout under `src/xrb_mcp/` to avoid
 collisions with unrelated installed packages. Deployment and migrations remain at
@@ -31,6 +34,8 @@ the repository root.
   registration, embeddings, backups, and the stored census-paper example.
 - [Using MCP with agents](docs/MCP_AGENTS.md): Codex and generic client setup,
   tool reference, research workflows, and troubleshooting.
+- [Local Ollama models](docs/OLLAMA.md): Conda setup, local inference, and the
+  runnable `xrb-ollama` research client.
 - [Runnable Python MCP client](examples/mcp/client.py),
   [Codex configuration](examples/mcp/codex.toml), and
   [generic stdio configuration](examples/mcp/stdio.json).
@@ -245,9 +250,11 @@ count is recorded with its method. No measurements, predictions or synthesis are
 automatically generated.
 
 Observations/events, units and upper-limit validation, timelines, catalogue
-ingestion/cross-matching, external authority lookup, automatic discovery and radio
-preparation belong to subsequent phases. Collections currently support ingestion
-membership and search filtering, not standalone MCP resources. See
+database ingestion/cross-matching, external authority lookup, automatic discovery
+and radio preparation belong to subsequent phases. Current catalogue support is
+limited to local file parsing (FITS/ASCII/CSV) in operator workflows. Collections
+currently support ingestion membership and search filtering, not standalone MCP
+resources. See
 [the implementation roadmap](docs/ROADMAP.md).
 
 The implementation uses the official
