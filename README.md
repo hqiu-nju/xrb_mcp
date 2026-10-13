@@ -13,6 +13,9 @@ Implemented:
   paragraph-aware chunking and content-addressed PDF storage.
 - Catalogue file parsing for FITS and ASCII/CSV inputs during inbox updates,
   with row/column summaries for operator review.
+- A separate SQLite master source catalogue built from the six local FITS catalogues
+  and BlackCAT, with alias/position matching, original-row provenance, review records,
+  and deduplicated FITS/CSV exports.
 - Transactional ingestion, SHA256 skips, and changed-document replacement by
   normalized DOI, arXiv identifier or ADS bibcode.
 - Reviewed source/alias registration; strict case/spacing normalization that
@@ -255,10 +258,10 @@ not detections or verified source-state classifications. The approximate token
 count is recorded with its method. No measurements, predictions or synthesis are
 automatically generated.
 
-Observations/events, units and upper-limit validation, timelines, catalogue
-database ingestion/cross-matching, external authority lookup, automatic discovery
-and radio preparation belong to subsequent phases. Current catalogue support is
-limited to local file parsing (FITS/ASCII/CSV) in operator workflows. Collections
+Observations/events, units and upper-limit validation, timelines, external authority
+lookup, automatic discovery and radio preparation belong to subsequent phases.
+Source catalogue builds use a separate SQLite snapshot; they do not modify the
+PostgreSQL literature source registry or backfill paper associations. Collections
 currently support ingestion membership and search filtering, not standalone MCP
 resources. See
 [the implementation roadmap](docs/ROADMAP.md).

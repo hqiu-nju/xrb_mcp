@@ -93,7 +93,8 @@ def _insert_catalogue(
     cursor = conn.execute(
         """
         INSERT INTO catalogues (
-            file_name, file_path, file_hash, format, row_count, column_count, columns_json, processed_at
+            file_name, file_path, file_hash, format, row_count, column_count,
+            columns_json, processed_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (

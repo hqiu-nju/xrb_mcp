@@ -1,7 +1,8 @@
 import csv
+import math
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator
-
+from typing import Any
 
 CATALOGUE_SUFFIXES: dict[str, str] = {
     ".ascii": "ascii",
@@ -77,7 +78,9 @@ def _iter_csv_rows(path: Path) -> tuple[str, list[str], Iterator[dict[str, Any]]
     return "csv", columns, rows()
 
 
-def _iter_astropy_rows(path: Path, file_format: str) -> tuple[str, list[str], Iterator[dict[str, Any]]]:
+def _iter_astropy_rows(
+    path: Path, file_format: str
+) -> tuple[str, list[str], Iterator[dict[str, Any]]]:
     try:
         from astropy.table import Table
     except ImportError as exc:
@@ -101,14 +104,21 @@ def _detect_csv_dialect(sample: str) -> csv.Dialect:
 
 def _to_python_value(value: Any) -> Any:
     masked = getattr(value, "mask", None)
-    if masked is True:
+    if masked is not None and getattr(masked, "ndim", 0) == 0 and bool(masked):
         return None
     if isinstance(value, bytes):
         return value.decode("utf-8", errors="replace")
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
     to_python = getattr(value, "item", None)
     if callable(to_python):
         try:
-            return to_python()
+            return _to_python_value(to_python())
         except ValueError:
             pass
+    to_list = getattr(value, "tolist", None)
+    if callable(to_list):
+        return _to_python_value(to_list())
+    if isinstance(value, (list, tuple)):
+        return [_to_python_value(item) for item in value]
     return value

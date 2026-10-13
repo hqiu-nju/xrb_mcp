@@ -151,6 +151,65 @@ There is no background watcher or automatic literature discovery. Run the comman
 again after adding files, or invoke it from a scheduler you manage. Start with one
 ingestion worker; database writes are serialized by the current implementation.
 
+## Build the master source catalogue
+
+Install the astronomy dependencies in the environment used for the build:
+
+```bash
+python -m pip install '.[astronomy]'
+python -m xrb_mcp.scripts.source_catalogues
+```
+
+The default inputs in `data/catalogues/` are `HMXB_cat.fits`, `LMXB_cat.fits`,
+`liu2000_lmxb.fit`, `liu2005_lmc.fit`, `liu2006.fit` and `watchdog.fit`.
+BlackCAT is fetched from its [source table](https://www.astro.puc.cl/BlackCAT/transients.php)
+and saved as `blackcat_transients.html`. The command is also installed as
+`xrb-build-sources`. Pass individual FITS paths as positional arguments to use
+other locations, and `--output-dir PATH` to change the destination.
+
+The default destination is `data/processed/source_catalogue/`:
+
+- `sources.db`: SQLite sources, aliases, original catalogue rows, supplementary
+  tables, accepted matches, review queue, and input metadata/hashes.
+- `sources.fits` and `sources.csv`: one row per consolidated source, with degree
+  coordinates, catalogue classes, compact-object labels, aliases and member-row references.
+- `source_matches.json`: the evidence for accepted identity matches.
+- `source_review.json`: ambiguous identities, position discrepancies and other
+  conflicts retained for review.
+- `source_catalogue_report.json`: input counts, consolidation counts, matching
+  policy and output paths.
+
+To reproduce a build using its saved BlackCAT snapshot:
+
+```bash
+python -m xrb_mcp.scripts.source_catalogues \
+  --blackcat-html data/processed/source_catalogue/blackcat_transients.html
+```
+
+Use `--no-blackcat` for local inputs alone. The default coordinate matching radius
+is 5 arcseconds (`--match-radius-arcsec`). Identity matching preserves coordinate
+signs and uses explicit aliases; it retains ambiguous matches for review. Modern
+positions are preferred over older positions. Legacy globular-cluster entries
+require named evidence before merging; a nearby position alone is insufficient.
+ICRS and legacy J2000 positions are
+used for these arcsecond-scale matches, with each selected coordinate's catalogue
+origin retained. Source classes and compact-object labels are catalogue assertions;
+BlackCAT membership alone does not establish a confirmed black hole. Original
+measurements, qualifiers and limits remain in the raw row JSON rather than being
+converted into assumed detections.
+
+The Liu Magellanic catalogue contains both Clouds despite its local `lmc` filename;
+its notes and bibliography HDUs are stored separately from source rows. Blank ASCII
+FITS numeric cells and non-finite values are preserved as missing data. Every input
+source row remains linked to exactly one consolidated source. Failed parsing or
+export leaves the previous source database and exports intact.
+
+This standalone catalogue does not modify registered literature identities, paper
+links or embeddings in PostgreSQL. The earlier `xrb-build-catalogues` command
+continues to build an unmerged raw-row snapshot. Cite the input catalogues when
+using their data in research; BlackCAT requests the
+[Corral-Santana et al. (2016) citation](https://www.astro.puc.cl/BlackCAT/citation.php).
+
 ## What an update does
 
 | Input/change | Current behavior | Operator action |
