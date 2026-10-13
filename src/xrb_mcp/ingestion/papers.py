@@ -27,6 +27,18 @@ from xrb_mcp.ingestion.tagging import contains_term, tag_text
 logger = logging.getLogger(__name__)
 
 
+def _link_collections(session: Session, paper: Paper, names: list[str]) -> None:
+    for name in names:
+        if not name.strip():
+            raise ValueError("Collection names must not be empty")
+        if session.get(Collection, name) is None:
+            session.add(Collection(name=name))
+            session.flush()
+        if session.get(CollectionPaper, (name, paper.id)) is None:
+            session.add(CollectionPaper(collection=name, paper_id=paper.id))
+            session.flush()
+
+
 def ingest_paper(
     session: Session,
     path: Path,
@@ -44,6 +56,7 @@ def ingest_paper(
     session.execute(text("SELECT pg_advisory_xact_lock(827002)"))
     same = session.scalar(select(Paper).where(Paper.content_hash == digest))
     if same:
+        _link_collections(session, same, metadata.collections)
         return {"status": "skipped", "paper_id": str(same.id), "reason": "unchanged_sha256"}
     identifiers = [
         getattr(Paper, field) == getattr(metadata, field)
@@ -161,14 +174,7 @@ def ingest_paper(
                 },
             )
         )
-    for name in metadata.collections:
-        if not name.strip():
-            raise ValueError("Collection names must not be empty")
-        if session.get(Collection, name) is None:
-            session.add(Collection(name=name))
-            session.flush()
-        if session.get(CollectionPaper, (name, paper.id)) is None:
-            session.add(CollectionPaper(collection=name, paper_id=paper.id))
+    _link_collections(session, paper, metadata.collections)
     session.flush()
     logger.info("paper_%s paper_id=%s chunks=%d", status, paper.id, len(chunks))
     return {

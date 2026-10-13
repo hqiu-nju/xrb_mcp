@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import func, select
 
 from xrb_mcp.astronomy.source_resolver import UnknownSource, register_source, resolve_source
-from xrb_mcp.database.models import Paper, PaperChunk, Provenance
+from xrb_mcp.database.models import CollectionPaper, Paper, PaperChunk, Provenance
 from xrb_mcp.ingestion.metadata import PaperMetadata
 from xrb_mcp.ingestion.papers import ingest_paper
 from xrb_mcp.retrieval.filters import LiteratureFilters
@@ -124,3 +124,27 @@ def test_embedding_failure_leaves_existing_paper_intact(session, pdf_factory, tm
             session, pdf_factory("bad.pdf", [["Changed text"]]), metadata(), tmp_path, backend
         )
     assert session.get(Paper, uuid.UUID(first["paper_id"])).content_hash == original
+
+
+def test_duplicate_paper_joins_new_collection_without_changing_evidence(
+    session, pdf_factory, tmp_path, backend
+):
+    path = pdf_factory()
+    first = ingest_paper(session, path, metadata(collections=["original"]), tmp_path, backend)
+    paper_id = uuid.UUID(first["paper_id"])
+    chunk_ids = set(session.scalars(select(PaperChunk.id)).all())
+    calls = backend.calls
+    result = ingest_paper(
+        session,
+        path,
+        PaperMetadata(title="Do not replace bibliography", collections=["new", "new"]),
+        tmp_path,
+        backend,
+    )
+    assert result["status"] == "skipped"
+    assert backend.calls == calls
+    assert session.get(Paper, paper_id).title == "Synthetic radio paper"
+    assert set(session.scalars(select(PaperChunk.id)).all()) == chunk_ids
+    assert session.get(CollectionPaper, ("original", paper_id)) is not None
+    assert session.get(CollectionPaper, ("new", paper_id)) is not None
+    assert search_literature(session, "radio", LiteratureFilters(collection="new"))["results"]

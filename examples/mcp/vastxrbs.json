@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "xrb": {
+      "command": "/Users/h.qiu/miniconda3/envs/xrb-mcp/bin/python",
+      "args": ["-m", "xrb_mcp.server.main"],
+      "cwd": "/Users/h.qiu/Documents/xrb_mcp",
+      "env": {
+        "XRB_READ_DATABASE_URL": "postgresql+psycopg://xrb_reader:xrb_reader_dev_only@localhost:5432/xrb",
+        "XRB_EMBEDDING_BACKEND": "sentence-transformers",
+        "XRB_EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2",
+        "XRB_EMBEDDING_REVISION": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+        "HF_HUB_OFFLINE": "1"
+      }
+    }
+  }
+}

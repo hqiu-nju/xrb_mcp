@@ -125,14 +125,20 @@ it does not establish that the extracted passages were manually verified.
 xrb-update data/inbox
 ```
 
-With no argument, `xrb-update` uses `XRB_DATA_DIR/inbox`. It scans that directory
-once, non-recursively, and processes:
+With no argument, `xrb-update` uses `XRB_DATA_DIR/inbox`. By default it scans that
+directory once, non-recursively; `--recursive` includes nested directories. It processes:
 
 - PDFs with either lowercase or uppercase suffixes, using same-basename `.json` sidecars.
 - Catalogue files in FITS (`.fits`, `.fit`, `.fts`) and ASCII/CSV (`.csv`, `.tsv`, `.txt`,
   `.dat`, `.ascii`, `.ecsv`, `.tab`) formats.
 
 Files remain in the inbox.
+
+Use `--metadata-dir PATH` for sidecars in a separate directory mirroring the input
+paths. When this option is supplied, each PDF must have a matching sidecar there.
+Repeat `--collection NAME` to add collection memberships. Repeat `--exclude GLOB`
+to omit relative paths matching case-sensitive globs; these produce an `excluded`
+JSON record. Unsupported file formats are otherwise ignored.
 
 One JSON record is printed per processed file. Each paper has its own transaction,
 so an invalid file does not discard its successfully ingested neighbours. Catalogue
@@ -153,7 +159,7 @@ ingestion worker; database writes are serialized by the current implementation.
 | Different PDF, matching DOI/arXiv/bibcode | `updated`; same paper ID, replacement chunks | Supply the existing identifier in the sidecar |
 | Different PDF, no matching identifier | New paper | Review metadata to avoid accidental duplicates |
 | Identifiers point to different records | Rejected | Review the bibliography; records are not merged |
-| Sidecar edits only, same PDF | Skipped; edits are not applied | Metadata-only correction needs a separate reviewed implementation |
+| Sidecar edits only, same PDF | Bibliographic edits skipped; requested collections added | Metadata-only correction needs a separate reviewed implementation |
 | Parser, tags or chunk size changed, same PDF | Skipped | Full-text reprocessing/force-ingest is not implemented |
 | Embedding backend/model changed | Old vectors are incompatible or absent | Use the explicit embedding rebuild command |
 
@@ -162,6 +168,57 @@ existing identifier. Omitted bibliographic fields retain old values; null values
 do not clear them. An omitted `sources` field preserves prior manual links. An
 explicit list replaces manual links, while current detected mentions are still
 associated. Collections are additive, not replaced or removed.
+
+## VAST XRB corpus
+
+The workstation corpus comes from `/Users/h.qiu/Documents/papers/vastxrbs`.
+Presentation PDFs (`DelSanto_Swift20.pdf`, `Homan_Jeroen.pdf`, and
+`P6_Thur_VanDenEijnden/P6_Thur_VanDenEijnden.pdf`), PowerPoint files, and videos
+are excluded. The selected corpus contains 42 PDFs over 1,342 PDF pages.
+Sidecars, the selection manifest, per-file results, source identity references,
+validation, and MCP search checks live in `data/processed/vastxrbs/`, which is
+ignored by Git. The original source folder is not edited.
+
+This is retrieval indexing with page citations, not language-model fine-tuning.
+Local `.env` enables the sentence-transformer backend and pins the embedding
+weights to a specific commit. Launch the MCP using the `xrb-mcp` Conda Python;
+the legacy Python 3.14 `.venv` does not have the optional ML dependencies.
+
+```bash
+conda activate xrb-mcp
+docker compose up -d db
+python -m xrb_mcp.scripts.update /Users/h.qiu/Documents/papers/vastxrbs \
+  --recursive --metadata-dir data/processed/vastxrbs/metadata \
+  --collection VAST_XRB \
+  --exclude DelSanto_Swift20.pdf --exclude Homan_Jeroen.pdf \
+  --exclude 'P6_Thur_VanDenEijnden/P6_Thur_VanDenEijnden.pdf' \
+  --exclude '*.pptx' --exclude '*.mp4'
+xrb-validate
+```
+
+New PDFs need matching reviewed sidecars before using this exact command.
+Bibliography comes from the supplied versions, not external lookup. Preprint
+years remain version dates where final publication data is not supplied. The
+Crook-Mansour manuscript proof is explicitly labelled as a draft and also belongs
+to `VAST_XRB_drafts`; it is a version of the supplied published paper, not
+independent corroboration. The eROSITA survey's long collaboration author list
+is represented by its first author and flagged in the manifest. Blank or
+image-dominated pages, equations and tables require original-PDF review.
+
+Search this collection through MCP, for example:
+
+```json
+{
+  "query": "radio emission",
+  "source": "A 0538-66",
+  "collection": "VAST_XRB",
+  "top_k": 5
+}
+```
+
+The existing reader role and the server's instructions continue to treat
+extracted passages and metadata as untrusted content. Papers supply evidence;
+their text is never executed as instructions by the importer.
 
 Changed-document updates replace that paper's chunks and passage provenance
 atomically. Other papers are unaffected. Old PDFs remain in the archive, but old

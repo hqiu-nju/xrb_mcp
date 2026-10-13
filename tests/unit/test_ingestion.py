@@ -74,6 +74,63 @@ def test_scanned_pdf_is_rejected(pdf_factory):
         parse_pdf(pdf_factory(pages=[[]]))
 
 
+def test_malformed_pdf_font_controls_preserve_surrounding_text(tmp_path, monkeypatch):
+    # This reproduces controls returned by WATCHDOG's figure font mappings.
+    class Page:
+        def get_text(self, *args, **kwargs):
+            return {
+                "blocks": [
+                    {
+                        "type": 0,
+                        "lines": [
+                            {
+                                "spans": [
+                                    {
+                                        "text": (
+                                            "\x01 3.0 \x00 2.5 \x02 2.0 "
+                                            "Transition Luminosity\tlog10(L bol)"
+                                        ),
+                                        "flags": 0,
+                                    }
+                                ]
+                            }
+                        ],
+                    }
+                ]
+            }
+
+    class Document:
+        needs_pass = False
+        metadata = {"title": "WATCHDOG\x00 figure"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def __len__(self):
+            return 1
+
+        def __iter__(self):
+            return iter([Page()])
+
+    monkeypatch.setattr("xrb_mcp.ingestion.pdf_parser.pymupdf.open", lambda path: Document())
+    parsed = parse_pdf(tmp_path / "font.pdf")
+    assert parsed.metadata["title"] == "WATCHDOG  figure"
+    assert parsed.blocks[0].text.split() == [
+        "3.0",
+        "2.5",
+        "2.0",
+        "Transition",
+        "Luminosity",
+        "log10(L",
+        "bol)",
+    ]
+    assert not any(character in parsed.blocks[0].text for character in ("\x00", "\x01", "\x02"))
+    assert parsed.blocks[0].page == 1
+
+
 def test_typeset_columns_and_figure_labels_keep_correct_sections(tmp_path):
     import pymupdf
 

@@ -10,11 +10,17 @@ from xrb_mcp.ingestion.papers import ingest_paper
 from xrb_mcp.server.config import get_settings
 
 
-def ingest_file(path: Path, metadata_path: Path | None = None) -> dict:
+def ingest_file(
+    path: Path, metadata_path: Path | None = None, collections: list[str] | None = None
+) -> dict:
     sidecar = metadata_path or path.with_suffix(".json")
     metadata = read_metadata(sidecar) if sidecar.exists() else PaperMetadata()
     if metadata_path and not metadata_path.is_file():
         raise ValueError("Specified metadata sidecar does not exist")
+    if collections:
+        metadata = metadata.model_copy(
+            update={"collections": list(dict.fromkeys([*metadata.collections, *collections]))}
+        )
     settings = get_settings()
     with session_scope() as session:
         return ingest_paper(

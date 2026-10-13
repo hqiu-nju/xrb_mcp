@@ -12,7 +12,14 @@ HEADING = re.compile(
     re.I,
 )
 NUMBERED_HEADING = re.compile(r"^(?:\d+(?:\.\d+)*\.?|APPENDIX\s+[A-Z]:?)\s+\S.+$", re.I)
-PARSER_METHOD = "pymupdf_native_order+styled_sections_v2"
+PARSER_METHOD = "pymupdf_native_order+styled_sections+text_controls_v3"
+TEXT_CONTROLS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def _clean_text(value: str) -> str:
+    # Malformed font mappings can emit NUL/control characters for figure glyphs.
+    # PostgreSQL rejects NUL; preserve word boundaries and surrounding numbers.
+    return TEXT_CONTROLS.sub(" ", value)
 
 
 def styled_heading(block: dict) -> str | None:
@@ -22,7 +29,7 @@ def styled_heading(block: dict) -> str | None:
     plot labels such as '5.5 GHz radio luminosity' as section boundaries.
     """
     spans = [span for line in block["lines"] for span in line["spans"] if span["text"].strip()]
-    title = " ".join(span["text"].strip() for span in spans)
+    title = " ".join(_clean_text(span["text"]).strip() for span in spans)
     if not title or len(title) > 200:
         return None
     emphasized = all(span["flags"] & (16 | 2) for span in spans)
@@ -52,7 +59,10 @@ def parse_pdf(path: Path) -> ParsedPDF:
     with pymupdf.open(path) as doc:
         if doc.needs_pass:
             raise ValueError("Encrypted PDF requires a decrypted local copy")
-        metadata = dict(doc.metadata or {})
+        metadata = {
+            key: _clean_text(value) if isinstance(value, str) else value
+            for key, value in (doc.metadata or {}).items()
+        }
         page_count = len(doc)
         for page_number, page in enumerate(doc, start=1):
             # LaTeX PDFs commonly store columns in reading order. Sorting solely by y
@@ -66,7 +76,7 @@ def parse_pdf(path: Path) -> ParsedPDF:
                     continue
                 pending: list[str] = []
                 for index, pdf_line in enumerate(block["lines"]):
-                    line = "".join(span["text"] for span in pdf_line["spans"]).strip()
+                    line = _clean_text("".join(span["text"] for span in pdf_line["spans"])).strip()
                     if not line:
                         continue
                     if index == 0 and len(line) < 100 and HEADING.fullmatch(line):

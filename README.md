@@ -114,10 +114,16 @@ xrb-validate
 
 PDF metadata and filenames provide only a title fallback. Authors, year, DOI and
 abstract are not guessed; ingestion reports incomplete bibliography. Review the
-sidecar before first ingestion. Identical bytes are skipped, including metadata
-changes to their sidecars; metadata-only editing is a later workflow. For a changed
+sidecar before first ingestion. Identical bytes skip parsing, embeddings and
+bibliographic edits, while requested collection memberships are added.
+Metadata-only editing is a later workflow. For a changed
 PDF, provide its existing bibliographic identifier to update that paper. Without a
 matching identifier it becomes a new record.
+
+For nested paper folders, use `xrb-update --recursive`. The `--metadata-dir`
+option reads sidecars from a separate directory with the same relative paths,
+`--collection` adds membership, and repeatable `--exclude` globs omit selected
+relative paths. See [the VAST corpus workflow](docs/DATABASE_UPDATES.md#vast-xrb-corpus).
 
 Updates replace only that paper's chunks and passage provenance in one transaction.
 Unchanged papers retain chunk IDs and embeddings. Old original PDFs remain archived
