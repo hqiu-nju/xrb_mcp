@@ -12,5 +12,21 @@ dist/
 data/*/*
 !data/*/.gitkeep
 *.dump
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.pdf
+*.fits
+*.fit
+*.fts
+dataset.json
+datasets/
+shared-data/
 backups/
 .DS_Store
+# Share only the portable index and its manifest; keep originals and other data ignored.
+!/data/dataset/
+/data/dataset/*
+!/data/dataset/xrb.sqlite3
+!/data/dataset/dataset.json

@@ -14,6 +14,8 @@ class Settings(BaseSettings):
         "postgresql+psycopg://xrb_reader:xrb_reader_dev_only@localhost:5432/xrb"
     )
     data_dir: Path = Path("data")
+    database_mode: Literal["postgresql", "portable"] = "postgresql"
+    dataset_dir: Path = Path("data/dataset")
     embedding_backend: Literal["none", "sentence-transformers"] = "none"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     embedding_revision: str = "main"

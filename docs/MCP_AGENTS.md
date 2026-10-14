@@ -1,20 +1,22 @@
 # Using the XRB MCP server with agents
 
 An agent client launches the Python server as a local subprocess and communicates
-over MCP stdio. PostgreSQL runs separately. The model chooses tools and writes the
+over MCP stdio. Choose a portable SQLite dataset or a separate PostgreSQL server.
+The model chooses tools and writes the
 answer; the server returns local evidence and provenance without generated synthesis.
 
 ```text
 Agent / MCP client
   -> local stdio server process
-     -> read-only PostgreSQL connection
+     -> read-only SQLite snapshot or PostgreSQL connection
         -> stored paper passages, metadata and source identities
 
 Operator CLI -> writer connection -> new/updated papers in the same database
 ```
 
-Newly committed papers are available to subsequent queries without restarting the
-server. Restart after changing code, credentials, model settings or client config.
+In PostgreSQL mode, newly committed papers are available to subsequent queries.
+In portable mode, export/copy a new dataset snapshot to make updates available.
+Restart after changing code, credentials, model settings or client config.
 See [database updates](DATABASE_UPDATES.md) for all write operations.
 
 For fully local model inference, use the included `xrb-ollama` agent client.
@@ -23,6 +25,10 @@ It bridges Ollama tool calling to this MCP server; see the
 with their preferred model provider.
 
 ## Prepare the local server
+
+For a copied/downloaded dataset, use [portable setup](PORTABLE_DATASET.md) and
+the [portable MCP configuration](../examples/mcp/portable.json). Docker and PostgreSQL
+are unnecessary for that mode. The following workflow is for the ingestion database.
 
 ```bash
 cd /Users/h.qiu/Documents/xrb_mcp

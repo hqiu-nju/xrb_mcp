@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "xrb": {
+      "command": "/absolute/path/to/python",
+      "args": ["-m", "xrb_mcp.server.main"],
+      "env": {
+        "XRB_DATABASE_MODE": "portable",
+        "XRB_DATASET_DIR": "/absolute/path/to/xrb_mcp/data/dataset",
+        "XRB_EMBEDDING_BACKEND": "none"
+      }
+    }
+  }
+}

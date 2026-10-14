@@ -2,11 +2,15 @@
 
 A local, provenance-aware literature backend for X-ray binary research. This is the
 initial Phase 1 framework from [the system plan](XRB_MCP_SYSTEM_PLAN.md), not the
-completed scientific knowledge base. No research papers or asserted astrophysical
-measurements are bundled.
+completed scientific knowledge base. A minimal SQLite dataset is included for
+trying the MCP. It contains extracted paper passages, catalogue rows, citations,
+and provenance; original PDFs and input catalogue files are kept separately.
 
 Implemented:
 
+- A compact read-only SQLite distribution for literature and catalogue retrieval,
+  with `data/dataset/xrb.sqlite3` and `data/dataset/dataset.json` included in the
+  code repository. Original files can be copied from a separate drive or link.
 - PostgreSQL + pgvector, a frozen Alembic migration, full-text/metadata indexes,
   and a separate read-only MCP database role.
 - PDF text extraction with 1-based PDF page references and section heuristics;
@@ -33,6 +37,8 @@ the repository root.
 
 ## Documentation
 
+- [Portable dataset](docs/PORTABLE_DATASET.md): try the MCP without PostgreSQL, export
+  or refresh the minimal dataset, and keep originals on a separate drive or link.
 - [Updating the database](docs/DATABASE_UPDATES.md): ingestion, revisions, source
   registration, embeddings, backups, and the stored census-paper example.
 - [Using MCP with agents](docs/MCP_AGENTS.md): Codex and generic client setup,
@@ -44,6 +50,22 @@ the repository root.
   [generic stdio configuration](examples/mcp/stdio.json).
 
 ## Quick start
+
+To try the included dataset, run these commands from the cloned repository:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install .
+xrb-validate-dataset data/dataset
+XRB_DATABASE_MODE=portable XRB_DATASET_DIR="$PWD/data/dataset" XRB_EMBEDDING_BACKEND=none \
+  python examples/mcp/client.py --source 'Vela X-1' --query wind --paper ''
+```
+
+The [portable setup](docs/PORTABLE_DATASET.md#try-the-mcp-on-another-machine)
+explains MCP client configuration and optional external dataset downloads. Normal
+queries need only Python, the MCP package, and the two included dataset files.
+The PostgreSQL setup below is for ingestion and maintaining the research corpus.
 
 Requires Conda (Miniconda/Miniforge/Anaconda) and Docker Desktop/Engine with
 Compose. `environment.yml` creates the `xrb-mcp` environment with Python 3.12
@@ -260,7 +282,8 @@ automatically generated.
 
 Observations/events, units and upper-limit validation, timelines, external authority
 lookup, automatic discovery and radio preparation belong to subsequent phases.
-Source catalogue builds use a separate SQLite snapshot; they do not modify the
+Source catalogue builds use a separate SQLite snapshot; portable exports incorporate
+it and link exact unambiguous identities to literature sources. They do not modify the
 PostgreSQL literature source registry or backfill paper associations. Collections
 currently support ingestion membership and search filtering, not standalone MCP
 resources. See

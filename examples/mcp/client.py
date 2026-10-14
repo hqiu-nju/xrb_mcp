@@ -22,6 +22,8 @@ async def run(args: argparse.Namespace) -> dict:
         args=["-m", "xrb_mcp.server.main"],
         cwd=ROOT,
         env={
+            "XRB_DATABASE_MODE": settings.database_mode,
+            "XRB_DATASET_DIR": str(settings.dataset_dir),
             "XRB_READ_DATABASE_URL": settings.read_database_url.get_secret_value(),
             "XRB_EMBEDDING_BACKEND": settings.embedding_backend,
             "XRB_EMBEDDING_MODEL": settings.embedding_model,

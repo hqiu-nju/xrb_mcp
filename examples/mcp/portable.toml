@@ -1,0 +1,12 @@
+# Merge into the client's existing configuration. Replace both absolute paths.
+[mcp_servers.xrb]
+command = "/absolute/path/to/python"
+args = ["-m", "xrb_mcp.server.main"]
+enabled_tools = ["get_source", "get_paper", "search_literature"]
+startup_timeout_sec = 30
+tool_timeout_sec = 120
+
+[mcp_servers.xrb.env]
+XRB_DATABASE_MODE = "portable"
+XRB_DATASET_DIR = "/absolute/path/to/xrb_mcp/data/dataset"
+XRB_EMBEDDING_BACKEND = "none"

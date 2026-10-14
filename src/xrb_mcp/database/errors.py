@@ -1,5 +1,6 @@
 import functools
 import logging
+import sqlite3
 
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -11,7 +12,7 @@ def safe_database_errors(function):
     def wrapped(*args, **kwargs):
         try:
             return function(*args, **kwargs)
-        except SQLAlchemyError:
+        except (SQLAlchemyError, sqlite3.Error):
             logging.getLogger(__name__).error("Database operation failed in %s", function.__name__)
             raise ValueError(
                 "Database unavailable or schema not ready; ask the operator to check it"

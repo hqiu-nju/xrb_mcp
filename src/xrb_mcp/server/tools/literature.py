@@ -1,8 +1,11 @@
 from xrb_mcp.database.connection import session_scope
+from xrb_mcp.database.portable_schema import DATABASE_FILENAME
 from xrb_mcp.ingestion.embeddings import get_embedding_backend
 from xrb_mcp.retrieval.filters import LiteratureFilters
 from xrb_mcp.retrieval.hybrid_search import search_literature as research_search
 from xrb_mcp.retrieval.objects import paper_object
+from xrb_mcp.retrieval.portable import PortableReader
+from xrb_mcp.server.config import get_settings
 
 
 def search_literature(
@@ -33,11 +36,19 @@ def search_literature(
         collection=collection,
         top_k=top_k,
     )
+    settings = get_settings()
+    if settings.database_mode == "portable":
+        with PortableReader(settings.dataset_dir / DATABASE_FILENAME) as reader:
+            return reader.search_literature(query, filters, get_embedding_backend())
     with session_scope(read_only=True) as session:
         return research_search(session, query, filters, get_embedding_backend())
 
 
 def get_paper(identifier: str) -> dict:
     """Get paper metadata and evidence references by ID, DOI, arXiv, bibcode or title."""
+    settings = get_settings()
+    if settings.database_mode == "portable":
+        with PortableReader(settings.dataset_dir / DATABASE_FILENAME) as reader:
+            return reader.paper_object(identifier)
     with session_scope(read_only=True) as session:
         return paper_object(session, identifier)
